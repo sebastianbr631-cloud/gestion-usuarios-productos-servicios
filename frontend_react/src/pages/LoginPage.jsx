@@ -1,72 +1,105 @@
-// src/pages/LoginPage.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-function LoginPage({ setUsuarioActual }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+export default function LoginPage({ API_URL, setUsuarioActual }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
-  // Usuarios simulados
-  const usuariosSimulados = [
-    { email: 'admin@gmail.com', password: 'admin123', rol: 'admin123' },
+  //  Limpiar campos al montar
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+  }, []);
 
-  ];
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
 
-    const usuario = usuariosSimulados.find(
-      u => u.email === email && u.password === password
-    );
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!usuario) {
-      setError('Correo o contraseña incorrectos');
-      return;
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.msg || "Error al iniciar sesión");
+        return;
+      }
+
+      //  Guardar sesión
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("usuario", JSON.stringify(data.usuario));
+
+      //  Estado global
+      setUsuarioActual(data.usuario);
+
+      //  Limpiar inputs después de login
+      setEmail("");
+      setPassword("");
+
+      //  Redirección
+      navigate("/");
+    } catch (error) {
+      setError("Error de conexión con el servidor");
     }
-
-    // Guardamos el usuario logueado con su rol
-    setUsuarioActual(usuario);
-    navigate('/'); // Redirige a la página de Usuarios
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center" style={{ height: '70vh' }}>
-      <div className="card p-4 shadow-sm" style={{ width: '400px' }}>
-        <h3 className="text-center mb-3">Iniciar Sesión</h3>
-        {error && <div className="alert alert-danger">{error}</div>}
-        <form onSubmit={handleLogin}>
+    <div className="container d-flex justify-content-center align-items-center vh-100">
+      <div className="card p-4 shadow" style={{ width: "350px" }}>
+
+        <h3 className="text-center mb-3">
+          Gestión de Usuarios
+        </h3>
+
+        <form onSubmit={handleLogin} autoComplete="off">
+
           <div className="mb-3">
-            <label className="form-label">Correo</label>
+            <label className="form-label">Email</label>
             <input
               type="email"
+              name="email"
               className="form-control"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="off"
               required
             />
           </div>
+
           <div className="mb-3">
-            <label className="form-label">Contraseña</label>
+            <label className="form-label">Password</label>
             <input
               type="password"
+              name="password"
               className="form-control"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary w-100">Ingresar</button>
+
+          {error && (
+            <div className="alert alert-danger p-2">
+              {error}
+            </div>
+          )}
+
+          <button className="btn btn-primary w-100" type="submit">
+            Entrar
+          </button>
+
         </form>
-        <div className="mt-3 text-center text-muted" style={{ fontSize: '0.9rem' }}>
-          <p>Usuarios de prueba:</p>
-          <p>Admin: admin@gmail.com / admin123</p>
-          
-        </div>
       </div>
     </div>
   );
 }
-
-export default LoginPage;

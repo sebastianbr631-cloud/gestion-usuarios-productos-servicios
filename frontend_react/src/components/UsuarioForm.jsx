@@ -22,7 +22,9 @@ function UsuarioForm({ onSubmit, initialData }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     onSubmit({ nombre, username, email, password });
+
     if (!initialData) {
       setNombre('');
       setUsername('');
@@ -32,29 +34,40 @@ function UsuarioForm({ onSubmit, initialData }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} autoComplete="off">
+
+      {/*  CAMPOS FALSOS PARA ENGAÑAR AL NAVEGADOR */}
+      <input type="text" name="fakeuser" style={{ display: "none" }} />
+      <input type="password" name="fakepass" style={{ display: "none" }} />
+
       <input
         className="form-control mb-2"
         placeholder="Nombre"
         value={nombre}
         onChange={e => setNombre(e.target.value)}
+        autoComplete="off"
         required
       />
+
       <input
         className="form-control mb-2"
         placeholder="Username"
         value={username}
         onChange={e => setUsername(e.target.value)}
+        autoComplete="off"
         required
       />
+
       <input
         className="form-control mb-2"
-        type="email"
+        type="text" //  CAMBIO CLAVE (antes email)
         placeholder="Email"
         value={email}
         onChange={e => setEmail(e.target.value)}
+        autoComplete="off"
         required
       />
+
       {!initialData && (
         <input
           className="form-control mb-2"
@@ -62,9 +75,11 @@ function UsuarioForm({ onSubmit, initialData }) {
           placeholder="Password"
           value={password}
           onChange={e => setPassword(e.target.value)}
+          autoComplete="new-password"
           required
         />
       )}
+
       <button className="btn btn-primary">
         {initialData ? 'Actualizar Usuario' : 'Crear Usuario'}
       </button>

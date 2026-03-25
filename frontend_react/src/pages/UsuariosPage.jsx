@@ -7,91 +7,127 @@ const UsuariosPage = ({ API_URL }) => {
   const [usuarioEdit, setUsuarioEdit] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // -------------------- CRUD --------------------
+  //  HEADERS CON TOKEN
+  const getHeaders = () => {
+    const token = localStorage.getItem("token");
+
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+  };
+
+  // -------------------- GET USUARIOS --------------------
   const fetchUsuarios = async () => {
     try {
-      const res = await fetch(`${API_URL}/usuarios`);
+      const res = await fetch(`${API_URL}/usuarios`, {
+        headers: getHeaders(),
+      });
+
       const data = await res.json();
-      setUsuarios(data);
+
+      //  EVITA CRASH SI NO ES ARRAY
+      setUsuarios(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error cargando usuarios:", error);
+      setUsuarios([]);
     }
   };
 
+  // -------------------- CREATE --------------------
   const createUsuario = async (usuario) => {
     try {
       const res = await fetch(`${API_URL}/usuarios`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getHeaders(),
         body: JSON.stringify(usuario),
       });
+
       const data = await res.json();
-      setUsuarios([...usuarios, data]);
+
+      setUsuarios((prev) =>
+        Array.isArray(prev) ? [...prev, data] : [data]
+      );
     } catch (error) {
       console.error("Error creando usuario:", error);
     }
   };
 
+  // -------------------- UPDATE --------------------
   const updateUsuario = async (id, usuario) => {
     try {
       const res = await fetch(`${API_URL}/usuarios/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getHeaders(),
         body: JSON.stringify(usuario),
       });
+
       const data = await res.json();
-      setUsuarios(usuarios.map(u => u._id === id ? data : u));
+
+      setUsuarios((prev) =>
+        prev.map((u) => (u._id === id ? data : u))
+      );
+
       setUsuarioEdit(null);
     } catch (error) {
       console.error("Error actualizando usuario:", error);
     }
   };
 
+  // -------------------- DELETE --------------------
   const deleteUsuario = async (id) => {
     try {
-      await fetch(`${API_URL}/usuarios/${id}`, { method: "DELETE" });
-      setUsuarios(usuarios.filter(u => u._id !== id));
+      await fetch(`${API_URL}/usuarios/${id}`, {
+        method: "DELETE",
+        headers: getHeaders(),
+      });
+
+      setUsuarios((prev) => prev.filter((u) => u._id !== id));
     } catch (error) {
       console.error("Error eliminando usuario:", error);
     }
   };
 
+  // -------------------- LOAD --------------------
   useEffect(() => {
     fetchUsuarios();
   }, []);
 
-  // -------------------- FILTRO BUSCADOR --------------------
-  const filteredUsuarios = usuarios.filter(u => 
-    u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // -------------------- FILTRO SEGURO --------------------
+  const filteredUsuarios = (Array.isArray(usuarios) ? usuarios : []).filter(
+    (u) =>
+      u.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // -------------------- RENDER --------------------
   return (
     <div className="container mt-5">
       <h1 className="mb-3 text-primary text-center">Usuarios</h1>
 
-      {/* Buscador */}
-      <div className="mb-3">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Buscar usuario por nombre o email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+      {/* BUSCADOR */}
+      <input
+        type="text"
+        className="form-control mb-3"
+        placeholder="Buscar usuario..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
 
-      {/* Formulario */}
+      {/* FORMULARIO */}
       <div className="card p-4 shadow-sm mb-3 border-primary">
         <h3>{usuarioEdit ? "Editar Usuario" : "Crear Usuario"}</h3>
+
         <UsuarioForm
-          onSubmit={usuarioEdit ? (data) => updateUsuario(usuarioEdit._id, data) : createUsuario}
+          onSubmit={
+            usuarioEdit
+              ? (data) => updateUsuario(usuarioEdit._id, data)
+              : createUsuario
+          }
           initialData={usuarioEdit}
         />
       </div>
 
-      {/* Lista */}
+      {/* LISTA */}
       <UsuarioList
         usuarios={filteredUsuarios}
         onDelete={deleteUsuario}

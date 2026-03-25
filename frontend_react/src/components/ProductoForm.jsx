@@ -12,11 +12,18 @@ function ProductoForm({ onSubmit, initialData }) {
       setPrecio(initialData.precio || '');
       setDescripcion(initialData.descripcion || '');
       setStock(initialData.stock || '');
+    } else {
+      //  ESTO TE FALTABA
+      setNombre('');
+      setPrecio('');
+      setDescripcion('');
+      setStock('');
     }
   }, [initialData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     onSubmit({
       nombre,
       precio: Number(precio),
@@ -24,12 +31,11 @@ function ProductoForm({ onSubmit, initialData }) {
       stock: Number(stock)
     });
 
-    if (!initialData) {
-      setNombre('');
-      setPrecio('');
-      setDescripcion('');
-      setStock('');
-    }
+    // limpiar siempre después de enviar
+    setNombre('');
+    setPrecio('');
+    setDescripcion('');
+    setStock('');
   };
 
   return (
@@ -38,7 +44,9 @@ function ProductoForm({ onSubmit, initialData }) {
       <input className="form-control mb-2" type="number" placeholder="Precio" value={precio} onChange={e => setPrecio(e.target.value)} required />
       <input className="form-control mb-2" placeholder="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} required />
       <input className="form-control mb-2" type="number" placeholder="Stock" value={stock} onChange={e => setStock(e.target.value)} required />
-      <button className="btn btn-primary">{initialData ? "Actualizar Producto" : "Crear Producto"}</button>
+      <button className="btn btn-primary">
+        {initialData ? "Actualizar Producto" : "Crear Producto"}
+      </button>
     </form>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import UsuarioForm from "../components/UsuarioForm.jsx";
 import UsuarioList from "../components/UsuarioList.jsx";
 
@@ -7,47 +7,38 @@ const UsuariosPage = ({ API_URL }) => {
   const [usuarioEdit, setUsuarioEdit] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  //  HEADERS CON TOKEN
-  const getHeaders = () => {
-    const token = localStorage.getItem("token");
-
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
-  };
-
   // -------------------- GET USUARIOS --------------------
-  const fetchUsuarios = async () => {
+  const fetchUsuarios = useCallback(async () => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/usuarios`, {
-        headers: getHeaders(),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
-
       const data = await res.json();
-
-      //  EVITA CRASH SI NO ES ARRAY
       setUsuarios(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error cargando usuarios:", error);
       setUsuarios([]);
     }
-  };
+  }, [API_URL]);
 
   // -------------------- CREATE --------------------
   const createUsuario = async (usuario) => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/usuarios`, {
         method: "POST",
-        headers: getHeaders(),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(usuario),
       });
-
       const data = await res.json();
-
-      setUsuarios((prev) =>
-        Array.isArray(prev) ? [...prev, data] : [data]
-      );
+      setUsuarios((prev) => [...prev, data]);
     } catch (error) {
       console.error("Error creando usuario:", error);
     }
@@ -56,18 +47,17 @@ const UsuariosPage = ({ API_URL }) => {
   // -------------------- UPDATE --------------------
   const updateUsuario = async (id, usuario) => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/usuarios/${id}`, {
         method: "PUT",
-        headers: getHeaders(),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(usuario),
       });
-
       const data = await res.json();
-
-      setUsuarios((prev) =>
-        prev.map((u) => (u._id === id ? data : u))
-      );
-
+      setUsuarios((prev) => prev.map((u) => (u._id === id ? data : u)));
       setUsuarioEdit(null);
     } catch (error) {
       console.error("Error actualizando usuario:", error);
@@ -77,11 +67,14 @@ const UsuariosPage = ({ API_URL }) => {
   // -------------------- DELETE --------------------
   const deleteUsuario = async (id) => {
     try {
+      const token = localStorage.getItem("token");
       await fetch(`${API_URL}/usuarios/${id}`, {
         method: "DELETE",
-        headers: getHeaders(),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
-
       setUsuarios((prev) => prev.filter((u) => u._id !== id));
     } catch (error) {
       console.error("Error eliminando usuario:", error);
@@ -91,10 +84,10 @@ const UsuariosPage = ({ API_URL }) => {
   // -------------------- LOAD --------------------
   useEffect(() => {
     fetchUsuarios();
-  }, []);
+  }, [fetchUsuarios]);
 
-  // -------------------- FILTRO SEGURO --------------------
-  const filteredUsuarios = (Array.isArray(usuarios) ? usuarios : []).filter(
+  // -------------------- FILTRO --------------------
+  const filteredUsuarios = usuarios.filter(
     (u) =>
       u.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -104,7 +97,6 @@ const UsuariosPage = ({ API_URL }) => {
     <div className="container mt-5">
       <h1 className="mb-3 text-primary text-center">Usuarios</h1>
 
-      {/* BUSCADOR */}
       <input
         type="text"
         className="form-control mb-3"
@@ -113,10 +105,8 @@ const UsuariosPage = ({ API_URL }) => {
         onChange={(e) => setSearchTerm(e.target.value)}
       />
 
-      {/* FORMULARIO */}
       <div className="card p-4 shadow-sm mb-3 border-primary">
         <h3>{usuarioEdit ? "Editar Usuario" : "Crear Usuario"}</h3>
-
         <UsuarioForm
           onSubmit={
             usuarioEdit
@@ -127,7 +117,6 @@ const UsuariosPage = ({ API_URL }) => {
         />
       </div>
 
-      {/* LISTA */}
       <UsuarioList
         usuarios={filteredUsuarios}
         onDelete={deleteUsuario}

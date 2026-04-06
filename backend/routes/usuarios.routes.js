@@ -1,13 +1,13 @@
 const { Router } = require('express');
 const router = Router();
 const usuariosCtrl = require('../controllers/usuarios');
-const verifyToken = require('../middlewares/verifyToken');
 
-router.get('/', verifyToken, usuariosCtrl.getUsuarios);
-router.get('/id/:id', verifyToken, usuariosCtrl.getUsuarioById);
-router.get('/username/:username', verifyToken, usuariosCtrl.getUsuarioByUsername);
-router.post('/', verifyToken, usuariosCtrl.createUsuario);
-router.put('/:id', verifyToken, usuariosCtrl.updateUsuario);
-router.delete('/:id', verifyToken, usuariosCtrl.deleteUsuario);
+// Rutas CRUD funcionales sin login
+router.get('/', usuariosCtrl.getUsuarios);
+router.get('/id/:id', usuariosCtrl.getUsuarioById);
+router.get('/username/:username', usuariosCtrl.getUsuarioByUsername);
+router.post('/', usuariosCtrl.createUsuario);
+router.put('/:id', usuariosCtrl.updateUsuario);
+router.delete('/:id', usuariosCtrl.deleteUsuario);
 
 module.exports = router;

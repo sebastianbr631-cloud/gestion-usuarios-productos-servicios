@@ -7,35 +7,79 @@ const ProductosPage = ({ API_URL }) => {
   const [productoEdit, setProductoEdit] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  //  TOKEN
+  // -------------------- HEADERS CON TOKEN --------------------
   const getHeaders = () => {
     const token = localStorage.getItem("token");
-
     return {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     };
   };
 
+  // -------------------- GET PRODUCTOS --------------------
   const fetchProductos = async () => {
     try {
-      const res = await fetch(`${API_URL}/productos`, {
-        headers: getHeaders()
-      });
-
+      const res = await fetch(`${API_URL}/productos`, { headers: getHeaders() });
       const data = await res.json();
-      setProductos(data);
+      setProductos(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.log(error);
+      console.error("Error cargando productos:", error);
+      setProductos([]);
     }
   };
 
+  // -------------------- CREATE --------------------
+  const createProducto = async (producto) => {
+    try {
+      const res = await fetch(`${API_URL}/productos`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(producto),
+      });
+      const data = await res.json();
+      setProductos((prev) => (Array.isArray(prev) ? [...prev, data] : [data]));
+    } catch (error) {
+      console.error("Error creando producto:", error);
+    }
+  };
+
+  // -------------------- UPDATE --------------------
+  const updateProducto = async (id, producto) => {
+    try {
+      const res = await fetch(`${API_URL}/productos/${id}`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: JSON.stringify(producto),
+      });
+      const data = await res.json();
+      setProductos((prev) => prev.map((p) => (p._id === id ? data : p)));
+      setProductoEdit(null);
+    } catch (error) {
+      console.error("Error actualizando producto:", error);
+    }
+  };
+
+  // -------------------- DELETE --------------------
+  const deleteProducto = async (id) => {
+    try {
+      await fetch(`${API_URL}/productos/${id}`, {
+        method: "DELETE",
+        headers: getHeaders(),
+      });
+      setProductos((prev) => prev.filter((p) => p._id !== id));
+    } catch (error) {
+      console.error("Error eliminando producto:", error);
+    }
+  };
+
+  // -------------------- LOAD --------------------
   useEffect(() => {
     fetchProductos();
-  }, []);
+  }, [API_URL]);
 
-  const filteredProductos = productos.filter(p =>
-    p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  // -------------------- FILTRO --------------------
+  const filteredProductos = (Array.isArray(productos) ? productos : []).filter((p) =>
+    p.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -52,36 +96,14 @@ const ProductosPage = ({ API_URL }) => {
         />
       </div>
 
-      {/* FORM */}
+      {/* FORMULARIO */}
       <div className="card p-4 shadow-sm mb-3 border-success">
         <h3>{productoEdit ? "Editar Producto" : "Crear Producto"}</h3>
-
         <ProductoForm
           onSubmit={
             productoEdit
-              ? (data) => {
-                  fetch(`${API_URL}/productos/${productoEdit._id}`, {
-                    method: "PUT",
-                    headers: getHeaders(),
-                    body: JSON.stringify(data),
-                  })
-                    .then(res => res.json())
-                    .then(data => {
-                      setProductos(productos.map(p =>
-                        p._id === productoEdit._id ? data : p
-                      ));
-                      setProductoEdit(null);
-                    });
-                }
-              : (data) => {
-                  fetch(`${API_URL}/productos`, {
-                    method: "POST",
-                    headers: getHeaders(),
-                    body: JSON.stringify(data),
-                  })
-                    .then(res => res.json())
-                    .then(data => setProductos([...productos, data]));
-                }
+              ? (data) => updateProducto(productoEdit._id, data)
+              : createProducto
           }
           initialData={productoEdit}
         />
@@ -90,15 +112,7 @@ const ProductosPage = ({ API_URL }) => {
       {/* LISTA */}
       <ProductoList
         productos={filteredProductos}
-        onDelete={(id) => {
-          fetch(`${API_URL}/productos/${id}`, {
-            method: "DELETE",
-            headers: getHeaders()
-          })
-            .then(() =>
-              setProductos(productos.filter(p => p._id !== id))
-            );
-        }}
+        onDelete={deleteProducto}
         onEdit={setProductoEdit}
       />
     </div>

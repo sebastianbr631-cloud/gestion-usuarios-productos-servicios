@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ServicioForm from "../components/ServicioForm.jsx";
 import ServicioList from "../components/ServicioList.jsx";
 
@@ -7,38 +7,38 @@ const ServiciosPage = ({ API_URL }) => {
   const [servicioEdit, setServicioEdit] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const token = localStorage.getItem("token");
-
-  // -------------------- GET --------------------
-  const fetchServicios = async () => {
+  // -------------------- GET SERVICIOS --------------------
+  const fetchServicios = useCallback(async () => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/servicios`, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
-
       const data = await res.json();
-      setServicios(data);
+      setServicios(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error cargando servicios:", error);
+      setServicios([]);
     }
-  };
+  }, [API_URL]);
 
   // -------------------- CREATE --------------------
   const createServicio = async (servicio) => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/servicios`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(servicio)
+        body: JSON.stringify(servicio),
       });
-
       const data = await res.json();
-      setServicios([...servicios, data]);
+      setServicios((prev) => [...prev, data]);
     } catch (error) {
       console.error("Error creando servicio:", error);
     }
@@ -47,21 +47,17 @@ const ServiciosPage = ({ API_URL }) => {
   // -------------------- UPDATE --------------------
   const updateServicio = async (id, servicio) => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/servicios/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(servicio)
+        body: JSON.stringify(servicio),
       });
-
       const data = await res.json();
-
-      setServicios(
-        servicios.map(s => (s._id === id ? data : s))
-      );
-
+      setServicios((prev) => prev.map((s) => (s._id === id ? data : s)));
       setServicioEdit(null);
     } catch (error) {
       console.error("Error actualizando servicio:", error);
@@ -71,25 +67,28 @@ const ServiciosPage = ({ API_URL }) => {
   // -------------------- DELETE --------------------
   const deleteServicio = async (id) => {
     try {
+      const token = localStorage.getItem("token");
       await fetch(`${API_URL}/servicios/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
-
-      setServicios(servicios.filter(s => s._id !== id));
+      setServicios((prev) => prev.filter((s) => s._id !== id));
     } catch (error) {
       console.error("Error eliminando servicio:", error);
     }
   };
 
+  // -------------------- LOAD --------------------
   useEffect(() => {
     fetchServicios();
-  }, []);
+  }, [fetchServicios]);
 
-  const filteredServicios = servicios.filter(s =>
-    s.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  // -------------------- FILTRO --------------------
+  const filteredServicios = servicios.filter((s) =>
+    s.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -106,7 +105,6 @@ const ServiciosPage = ({ API_URL }) => {
 
       <div className="card p-4 shadow-sm mb-3 border-warning">
         <h3>{servicioEdit ? "Editar Servicio" : "Crear Servicio"}</h3>
-
         <ServicioForm
           onSubmit={
             servicioEdit
